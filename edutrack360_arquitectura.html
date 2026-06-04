@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduTrack 360 — Arquitectura de Base de Datos v2</title>
+<style>
+/* ============================================================
+   TOKENS Y VARIABLES
+   ============================================================ */
+:root {
+  --verde:        #166534;
+  --verde-bg:     #dcfce7;
+  --verde-border: #86efac;
+  --verde-mid:    #16a34a;
+
+  --naranja:        #9a3412;
+  --naranja-bg:     #ffedd5;
+  --naranja-border: #fdba74;
+  --naranja-mid:    #ea580c;
+
+  --rojo:        #991b1b;
+  --rojo-bg:     #fee2e2;
+  --rojo-border: #fca5a5;
+
+  --azul:        #1e3a5f;
+  --azul-bg:     #dbeafe;
+  --azul-border: #93c5fd;
+  --azul-mid:    #2563eb;
+
+  --morado:        #4c1d95;
+  --morado-bg:     #ede9fe;
+  --morado-border: #c4b5fd;
+  --morado-mid:    #7c3aed;
+
+  --teal:        #134e4a;
+  --teal-bg:     #ccfbf1;
+  --teal-border: #5eead4;
+  --teal-mid:    #0d9488;
+
+  --amarillo-bg:     #fef9c3;
+  --amarillo-border: #fde047;
+  --amarillo:        #713f12;
+
+  --gris:        #374151;
+  --gris-bg:     #f3f4f6;
+  --gris-border: #d1d5db;
+  --gris-mid:    #6b7280;
+
+  --text:        #111827;
+  --text-muted:  #6b7280;
+  --border:      #e5e7eb;
+  --bg-page:     #f9fafb;
+  --bg-surface:  #ffffff;
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:   0 4px 6px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.04);
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --nav-h:     56px;
+}
+
+/* ============================================================
+   RESET Y BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-page);
+  color: var(--text);
+  line-height: 1.6;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   NAVEGACION
+   ============================================================ */
+nav {
+  background: #0d1b2a;
+  height: var(--nav-h);
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  border-bottom: 2px solid var(--verde-mid);
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+nav::-webkit-scrollbar { display: none; }
+
+.nav-brand {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem 0 1rem;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  margin-right: 0.25rem;
+  gap: 8px;
+}
+
+.nav-brand-text {
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.nav-brand-text span { color: var(--verde-mid); }
+
+.nav-badge {
+  background: rgba(22,163,74,0.18);
+  color: var(--verde-mid);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.nav-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.55);
+  font-size: 0.8rem;
+  font-family: inherit;
+  padding: 0 1rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.nav-btn:hover { color: rgba(255,255,255,0.85); }
+.nav-btn.active { color: #ffffff; border-bottom-color: var(--verde-mid); }
+
+/* ============================================================
+   SECCIONES PRINCIPALES
+   ============================================================ */
+.section {
+  display: none;
+  padding: 2rem 1rem;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.section.visible { display: block; }
+
+@media (min-width: 640px) {
+  .section { padding: 2.5rem 1.5rem; }
+}
+
+@media (min-width: 1024px) {
+  .section { padding: 3rem 2rem; }
+}
+
+/* ============================================================
+   TIPOGRAFIA
+   ============================================================ */
+h1 {
+  font-size: clamp(1.25rem, 3vw, 1.6rem);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.2rem;
+}
+
+h2 {
+  font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+  font-weight: 600;
+  color: var(--text);
+  margin: 2rem 0 0.9rem;
+}
+
+h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.35rem;
+}
+
+.page-subtitle {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 2rem;
+}
+
+/* ============================================================
+   TARJETAS
+   ============================================================ */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 640px) {
+  .card-grid { grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+}
+
+.stat-label { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: clamp(1.6rem, 4vw, 2.2rem); font-weight: 700; line-height: 1.1; }
+.stat-sub   { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+
+/* ============================================================
+   BADGES
+   ============================================================ */
+.badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.2px;
+  vertical-align: middle;
+}
+
+.badge-verde   { background: var(--verde-bg);   color: var(--verde); }
+.badge-naranja { background: var(--naranja-bg); color: var(--naranja); }
+.badge-rojo    { background: var(--rojo-bg);    color: var(--rojo); }
+.badge-azul    { background: var(--azul-bg);    color: var(--azul); }
+.badge-morado  { background: var(--morado-bg);  color: var(--morado); }
+.badge-teal    { background: var(--teal-bg);    color: var(--teal); }
+.badge-gris    { background: var(--gris-bg);    color: var(--gris); }
+.badge-new     { background: var(--amarillo-bg); color: var(--amarillo); }
+
+/* ============================================================
+   ALERTAS
+   ============================================================ */
+.alert {
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.83rem;
+  margin-bottom: 1.25rem;
+  border-left: 3px solid;
+}
+
+.alert-azul    { background: var(--azul-bg);    color: var(--azul);    border-color: var(--azul-mid); }
+.alert-naranja { background: var(--naranja-bg); color: var(--naranja); border-color: var(--naranja-mid); }
+.alert-verde   { background: var(--verde-bg);   color: var(--verde);   border-color: var(--verde-mid); }
+.alert-rojo    { background: var(--rojo-bg);    color: var(--rojo);    border-color: var(--rojo); }
+
+/* ============================================================
+   FLOW / ARQUITECTURA (sección 1)
+   ============================================================ */
+.arch-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 640px) {
+  .arch-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 900px) {
+  .arch-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 1100px) {
+  .arch-grid { grid-template-columns: repeat(6, 1fr); }
+}
+
+.arch-layer {}
+
+.arch-layer-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.arch-node {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  margin-bottom: 0.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.arch-node:hover {
+  border-color: var(--azul-mid);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.07);
+}
+
+.arch-node.active {
+  border-color: var(--verde-mid);
+  background: #f0fdf4;
+  box-shadow: 0 0 0 3px rgba(22,163,74,0.1);
+}
+
+.arch-node-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.arch-node-sub {
+  font-size: 0.73rem;
+  color: var(--text-muted);
+}
+
+/* Panel de detalle */
+.detail-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-top: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  min-height: 100px;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.detail-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.detail-desc {
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.chip {
+  font-size: 0.75rem;
+  padding: 3px 9px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--gris-bg);
+  color: var(--gris);
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+}
+
+/* ============================================================
+   TABLA DE DATOS
+   ============================================================ */
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  background: var(--bg-surface);
+  -webkit-overflow-scrolling: touch;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  min-width: 580px;
+}
+
+.data-table th {
+  background: var(--bg-page);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.73rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: #fafafa; }
+
+/* ============================================================
+   SEMAFORO
+   ============================================================ */
+.semaforo-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+@media (min-width: 480px) {
+  .semaforo-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.semaforo-card {
+  padding: 1.25rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+}
+
+.semaforo-verde   { background: var(--verde-bg);   border-color: var(--verde-border); }
+.semaforo-naranja { background: var(--naranja-bg); border-color: var(--naranja-border); }
+.semaforo-rojo    { background: var(--rojo-bg);    border-color: var(--rojo-border); }
+
+.semaforo-indicator {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin-bottom: 0.6rem;
+}
+
+.ind-verde   { background: var(--verde-mid); box-shadow: 0 0 6px rgba(22,163,74,0.4); }
+.ind-naranja { background: var(--naranja-mid); box-shadow: 0 0 6px rgba(234,88,12,0.4); }
+.ind-rojo    { background: #dc2626; box-shadow: 0 0 6px rgba(220,38,38,0.4); }
+
+.semaforo-pts {
+  font-size: clamp(1.4rem, 3vw, 1.8rem);
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.2rem;
+}
+
+.semaforo-verde   .semaforo-pts { color: var(--verde); }
+.semaforo-naranja .semaforo-pts { color: var(--naranja); }
+.semaforo-rojo    .semaforo-pts { color: var(--rojo); }
+
+.semaforo-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.semaforo-verde   .semaforo-label { color: var(--verde); }
+.semaforo-naranja .semaforo-label { color: var(--naranja); }
+.semaforo-rojo    .semaforo-label { color: var(--rojo); }
+
+.semaforo-desc {
+  font-size: 0.78rem;
+  margin-top: 0.25rem;
+}
+
+.semaforo-verde   .semaforo-desc { color: var(--verde); }
+.semaforo-naranja .semaforo-desc { color: var(--naranja); }
+.semaforo-rojo    .semaforo-desc { color: var(--rojo); }
+
+/* ============================================================
+   FLUJO DE PASOS (Semaforo)
+   ============================================================ */
+.flow-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 700px;
+}
+
+.flow-step {
+  display: flex;
+  gap: 0;
+  position: relative;
+}
+
+.flow-step-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 36px;
+  flex-shrink: 0;
+}
+
+.flow-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.flow-step.step-azul    .flow-step-num { border-color: var(--azul-mid);    color: var(--azul);    background: var(--azul-bg); }
+.flow-step.step-amarillo .flow-step-num { border-color: #ca8a04; color: var(--amarillo); background: var(--amarillo-bg); }
+.flow-step.step-verde   .flow-step-num { border-color: var(--verde-mid);   color: var(--verde);   background: var(--verde-bg); }
+.flow-step.step-naranja .flow-step-num { border-color: var(--naranja-mid); color: var(--naranja); background: var(--naranja-bg); }
+.flow-step.step-morado  .flow-step-num { border-color: var(--morado-mid);  color: var(--morado);  background: var(--morado-bg); }
+.flow-step.step-gris    .flow-step-num { border-color: var(--gris-mid);    color: var(--gris);    background: var(--gris-bg); }
+
+.flow-step-line {
+  width: 2px;
+  flex: 1;
+  background: var(--border);
+  margin-top: 2px;
+  margin-bottom: 0;
+  min-height: 20px;
+}
+
+.flow-step:last-child .flow-step-line { display: none; }
+
+.flow-step-body {
+  flex: 1;
+  padding: 0 0 1.25rem 0.9rem;
+}
+
+.flow-step-title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  padding-top: 3px;
+}
+
+.flow-step-body p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ============================================================
+   MATRIZ DE ROLES
+   ============================================================ */
+.check-yes  { color: var(--verde-mid); font-weight: 600; font-size: 0.82rem; }
+.check-no   { color: var(--rojo);      font-weight: 600; font-size: 0.82rem; }
+.check-cond { color: var(--naranja-mid); font-size: 0.82rem; }
+.check-dash { color: var(--text-muted); font-size: 0.82rem; }
+
+/* ============================================================
+   CORRECCIONES (tarjetas de fix)
+   ============================================================ */
+.fix-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.fix-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  align-items: flex-start;
+}
+
+.fix-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.fix-icon-rojo    { background: var(--rojo-bg);    color: var(--rojo); }
+.fix-icon-naranja { background: var(--naranja-bg); color: var(--naranja); }
+.fix-icon-amarillo{ background: var(--amarillo-bg); color: var(--amarillo); }
+
+.fix-content h3 { font-size: 0.88rem; margin-bottom: 0.2rem; }
+.fix-content p  { font-size: 0.81rem; color: var(--text-muted); line-height: 1.6; }
+
+/* ============================================================
+   QUERIES SQL
+   ============================================================ */
+.query-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.query-header {
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border);
+}
+
+.query-header h3  { font-size: 0.88rem; }
+.query-header p   { font-size: 0.79rem; color: var(--text-muted); margin-top: 2px; }
+
+.query-body { padding: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+pre {
+  background: #0d1b2a;
+  color: #cdd6f4;
+  padding: 1rem 1.25rem;
+  font-size: 0.78rem;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  line-height: 1.7;
+  margin: 0;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+code {
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.8rem;
+  background: var(--gris-bg);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--morado);
+}
+
+/* ============================================================
+   OWASP TAGS
+   ============================================================ */
+.owasp-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--rojo-bg);
+  color: var(--rojo);
+  letter-spacing: 0.3px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* ============================================================
+   MOBILE NAV SCROLLBAR HINT
+   ============================================================ */
+.nav-scroll-hint {
+  display: none;
+  position: fixed;
+  top: calc(var(--nav-h) + 4px);
+  right: 8px;
+  background: rgba(13,27,42,0.85);
+  color: rgba(255,255,255,0.7);
+  font-size: 0.68rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 201;
+}
+
+@media (max-width: 639px) {
+  .nav-scroll-hint { display: block; animation: fadeout 2.5s forwards 2s; }
+}
+
+@keyframes fadeout { to { opacity: 0; } }
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+.mb-0 { margin-bottom: 0; }
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mt-4 { margin-top: 2rem; }
+</style>
+</head>
+<body>
+
+<span class="nav-scroll-hint">Desliza para navegar</span>
+
+<!-- ============================================================
+     NAVEGACION
+     ============================================================ -->
+<nav role="navigation" aria-label="Secciones">
+  <div class="nav-brand">
+    <span class="nav-brand-text">Edu<span>Track</span> 360</span>
+    <span class="nav-badge">DDL v2</span>
+  </div>
+  <button class="nav-btn active" onclick="show('overview', this)">Vision general</button>
+  <button class="nav-btn" onclick="show('tables', this)">Tablas</button>
+  <button class="nav-btn" onclick="show('semaforo', this)">Logica semaforo</button>
+  <button class="nav-btn" onclick="show('roles', this)">Roles</button>
+  <button class="nav-btn" onclick="show('fixes', this)">Correcciones v2</button>
+  <button class="nav-btn" onclick="show('queries', this)">Consultas clave</button>
+</nav>
+
+
+<!-- ============================================================
+     SECCION 1: VISION GENERAL
+     ============================================================ -->
+<main id="overview" class="section visible" role="main">
+  <h1>Arquitectura de base de datos</h1>
+  <p class="page-subtitle">EduTrack 360 &nbsp;&middot;&nbsp; CONALEP Puebla II &nbsp;&middot;&nbsp; SQL Server 2019+ &nbsp;&middot;&nbsp; DDL v2 post-auditoria</p>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="stat-label">Tablas totales</div>
+      <div class="stat-value">22</div>
+      <div class="stat-sub">4 nuevas en v2</div>
+    </div>
+    <div class="card">
+      <div class="stat-label">Indices</div>
+      <div class="stat-value">19</div>
+      <div class="stat-sub">8 nuevos en v2</div>
+    </div>
+    <div class="card">
+      <div class="stat-label">Triggers</div>
+      <div class="stat-value">5</div>
+      <div class="stat-sub">puntos, historial, audit x3</div>
+    </div>
+    <div class="card">
+      <div class="stat-label">Roles de usuario</div>
+      <div class="stat-value">5</div>
+      <div class="stat-sub">docente · orientador · directivo · padre · alumno</div>
+    </div>
+  </div>
+
+  <h2>Capas del sistema</h2>
+  <p style="font-size: 0.83rem; color: var(--text-muted); margin-bottom: 1rem;">
+    Selecciona cualquier nodo para ver el detalle de esa tabla o grupo de tablas.
+  </p>
+
+  <div class="arch-grid" id="arch-grid">
+
+    <!-- Infraestructura -->
+    <div class="arch-layer">
+      <div class="arch-layer-title">Infraestructura</div>
+      <div class="arch-node" onclick="detail(this, 'Infraestructura / Escala', 'Raiz del modelo multi-tenant. Un plantel contiene carreras y periodos. Cada registro en el sistema desciende de planteles via plantel_id, lo que garantiza el aislamiento de datos entre centros escolares.', ['planteles','carreras','periodos_escolares'], '#2563eb')">
+        <div class="arch-node-title">planteles</div>
+        <div class="arch-node-sub">Raiz multi-tenant</div>
+      </div>
+      <div class="arch-node" onclick="detail(this, 'Carreras', 'Catalogo de carreras tecnicas por plantel. Cada grupo pertenece a una carrera. La v2 agrega un indice NONCLUSTERED en plantel_id que antes no existia, eliminando full scans al listar carreras por plantel.', ['carreras'], '#2563eb')">
+        <div class="arch-node-title">carreras</div>
+        <div class="arch-node-sub">Por plantel &mdash; indice v2</div>
+      </div>
+      <div class="arch-node" onclick="detail(this, 'Periodos escolares', 'Define el ciclo lectivo. Solo un periodo puede tener activo=1 por plantel. Las incidencias, asistencias e historial siempre llevan periodo_id para aislamiento temporal de registros.', ['periodos_escolares'], '#2563eb')">
+        <div class="arch-node-title">periodos_escolares</div>
+        <div class="arch-node-sub">Ciclo lectivo activo</div>
+      </div>
+    </div>
+
+    <!-- Usuarios -->
+    <div class="arch-layer">
+      <div class="arch-layer-title">Usuarios</div>
+      <div class="arch-node" onclick="detail(this, 'Usuarios', 'Tabla unica para los 5 roles del sistema. El campo rol discrimina el tipo. La v2 agrega password_hash NVARCHAR(255), intentos_fallidos, bloqueado_hasta y ultimo_login como columnas de seguridad de cuenta obligatorias.', ['usuarios'], '#7c3aed')">
+        <div class="arch-node-title">usuarios</div>
+        <div class="arch-node-sub">5 roles, tabla unica</div>
+      </div>
+      <div class="arch-node" onclick="detail(this, 'Refresh tokens (v2)', 'Tabla nueva en v2. Almacena el hash del refresh token (nunca el token en texto plano), info de dispositivo, IP, fecha de expiracion y flag revocado. Permite invalidar sesiones activas en tiempo real ante compromiso de cuenta.', ['refresh_tokens'], '#7c3aed')">
+        <div class="arch-node-title">refresh_tokens <span class="badge badge-new">v2</span></div>
+        <div class="arch-node-sub">Control de sesiones</div>
+      </div>
+    </div>
+
+    <!-- Academico -->
+    <div class="arch-layer">
+      <div class="arch-layer-title">Academico</div>
+      <div class="arch-node" onclick="detail(this, 'Grupos', 'Cada grupo vive en un periodo y una carrera. El constraint UQ(nombre, periodo_id) permite reutilizar nombres de grupo en distintos periodos (ej. 601-24-25 y 601-23-24 coexisten sin colision). Nuevos indices en plantel_id y periodo_id en v2.', ['grupos'], '#0d9488')">
+        <div class="arch-node-title">grupos</div>
+        <div class="arch-node-sub">Periodo + carrera</div>
+      </div>
+      <div class="arch-node" onclick="detail(this, 'Alumnos', 'Extiende usuarios con datos academicos, medicos y conductales. nivel_semaforo es columna calculada PERSISTED. puntos_totales lo recalcula automaticamente el trigger TR_incidencias_actualiza_puntos en v2. correo_personal y telefono se migran a columnas cifradas AES-256.', ['alumnos'], '#0d9488')">
+        <div class="arch-node-title">alumnos</div>
+        <div class="arch-node-sub">Cifrado v2 + trigger</div>
+      </div>
+      <div class="arch-node" onclick="detail(this, 'Materias', 'Una materia pertenece a un grupo y tiene un docente asignado. Las incidencias pueden o no estar vinculadas a una materia (materia_id nullable). Nuevos indices en grupo_id y docente_id en v2.', ['materias'], '#0d9488')">
+        <div class="arch-node-title">materias</div>
+        <div class="arch-node-sub">Por grupo + docente</div>
+      </div>
+    </div>
+
+    <!-- Conductual -->
+    <div class="arch-layer">
+      <div class="arch-layer-title">Core conductual</div>
+      <div class="arch-node" onclick="detail(this, 'Incidencias', 'Registro central del sistema. El impacto_puntos (+/-) que porta cada incidencia es procesado automaticamente por el trigger TR_incidencias_actualiza_puntos. La v2 agrega CHK_incidencia_registrador via funcion escalar determinista que bloquea inserciones de roles no autorizados directamente en la BD (OWASP A01).', ['incidencias','categorias_incidencia'], '#ea580c')">
+        <div class="arch-node-title">incidencias</div>
+        <div class="arch-node-sub">Constraint OWASP A01 v2</div>
+      </div>
+      <div class="arch-node" onclick="detail(this, 'Asistencias', 'Registro diario por alumno y materia. presente=0 con justificada=0 puede disparar una incidencia de inasistencia desde la capa de aplicacion. Indice en (alumno_id, fecha DESC) para queries del historial.', ['asistencias'], '#ea580c')">
+        <div class="arch-node-title">asistencias</div>
+        <div class="arch-node-sub">Por materia y fecha</div>
+      </div>
+      <div class="arch-node" onclick="detail(this, 'Historial semaforo', 'Desnormalizacion deliberada: lleva periodo_id y grupo_id para evitar JOINs en consultas historicas de alto volumen. En v2 se genera automaticamente via trigger TR_historial_semaforo_auto cuando nivel_semaforo cambia. Se agrega columna causado_por para trazabilidad.', ['historial_semaforo'], '#ea580c')">
+        <div class="arch-node-title">historial_semaforo</div>
+        <div class="arch-node-sub">Desnorm. + trigger v2</div>
+      </div>
+    </div>
+
+    <!-- Comunicacion -->
+    <div class="arch-layer">
+      <div class="arch-layer-title">Comunicacion</div>
+      <div class="arch-node" onclick="detail(this, 'Notificaciones', 'Siempre derivadas de una incidencia. El campo canal determina el medio: push (app movil), email o interna (solo visible en sistema). Indice en (destinatario_id, leida) para la bandeja de entrada.', ['notificaciones'], '#16a34a')">
+        <div class="arch-node-title">notificaciones</div>
+        <div class="arch-node-sub">push / email / interna</div>
+      </div>
+      <div class="arch-node" onclick="detail(this, 'Avisos', 'Publicados por orientadores o directivos. dirigido_a permite segmentar por color de semaforo. La v2 agrega un indice NONCLUSTERED con INCLUDE(titulo, fecha_evento, descripcion) que convierte la query del dashboard del alumno en index-only scan.', ['avisos'], '#16a34a')">
+        <div class="arch-node-title">avisos</div>
+        <div class="arch-node-sub">Segmentados por color</div>
+      </div>
+      <div class="arch-node" onclick="detail(this, 'Seguimientos', 'Notas de orientacion sobre un alumno: cita, llamada o nota. Solo orientadores y directivos pueden registrarlos. Nuevos indices en alumno_id y orientador_id en v2.', ['seguimientos'], '#16a34a')">
+        <div class="arch-node-title">seguimientos</div>
+        <div class="arch-node-sub">Orientacion</div>
+      </div>
+    </div>
+
+    <!-- Auditoria + Soporte -->
+    <div class="arch-layer">
+      <div class="arch-layer-title">Auditoria + Soporte</div>
+      <div class="arch-node" onclick="detail(this, 'audit_log (v2)', 'Tabla nueva. Registra INSERT/UPDATE/DELETE en incidencias, alumnos e historial_semaforo con JSON del estado anterior y posterior. Los triggers TR_audit_* la alimentan automaticamente. Solo directivos tienen acceso de lectura. Resuelve compliance SEP/LFPDPPP.', ['audit_log'], '#991b1b')">
+        <div class="arch-node-title">audit_log <span class="badge badge-new">v2</span></div>
+        <div class="arch-node-sub">Trazabilidad total</div>
+      </div>
+      <div class="arch-node" onclick="detail(this, 'sai_sync_log (v2)', 'Detecta sincronizaciones parciales o fallidas con el SAI institucional. Un registro queda en estado iniciada hasta que la app lo marque completada o fallida. Resuelve la limitacion de alumnos.sai_sync_at que solo guardaba el ultimo timestamp.', ['sai_sync_log'], '#991b1b')">
+        <div class="arch-node-title">sai_sync_log <span class="badge badge-new">v2</span></div>
+        <div class="arch-node-sub">Trazabilidad SAI</div>
+      </div>
+      <div class="arch-node" onclick="detail(this, 'Gamificacion', 'Insignias configurables por plantel con umbral de puntos. alumno_insignias es tabla puente M:N. La app decide cuando otorgar una insignia comparando alumnos.puntos_totales con insignias.puntos_requeridos.', ['insignias','alumno_insignias'], '#6b7280')">
+        <div class="arch-node-title">insignias</div>
+        <div class="arch-node-sub">Gamificacion</div>
+      </div>
+    </div>
+
+  </div><!-- /arch-grid -->
+
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-desc">Selecciona cualquier nodo del diagrama de capas para ver informacion detallada sobre esa tabla.</div>
+  </div>
+
+</main>
+
+
+<!-- ============================================================
+     SECCION 2: TABLAS
+     ============================================================ -->
+<main id="tables" class="section">
+  <h1>Tablas y relaciones</h1>
+  <p class="page-subtitle">Esquema completo con claves foraneas, constraints y decisiones de diseno.</p>
+
+  <div class="alert alert-azul">
+    Las tablas marcadas con <strong>nuevo v2</strong> son adiciones de la auditoria. El script seed original es compatible sin modificaciones en las tablas existentes, con la excepcion de la correccion NEWID() descrita en el Bloque 12 de la migracion.
+  </div>
+
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Tabla</th>
+          <th>Capa</th>
+          <th>FK principales</th>
+          <th>Notas de diseno</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>planteles</code></td>
+          <td><span class="badge badge-azul">Infraestructura</span></td>
+          <td>&mdash;</td>
+          <td>Raiz multi-tenant. Todas las tablas descienden via plantel_id.</td>
+        </tr>
+        <tr>
+          <td><code>carreras</code></td>
+          <td><span class="badge badge-azul">Infraestructura</span></td>
+          <td>plantel_id</td>
+          <td>Catalogo por plantel. Indice en FK agregado en v2.</td>
+        </tr>
+        <tr>
+          <td><code>periodos_escolares</code></td>
+          <td><span class="badge badge-azul">Infraestructura</span></td>
+          <td>plantel_id</td>
+          <td>CHK valida fecha_fin > fecha_inicio. Solo un activo=1 por plantel.</td>
+        </tr>
+        <tr>
+          <td><code>usuarios</code></td>
+          <td><span class="badge badge-morado">Usuarios</span></td>
+          <td>plantel_id</td>
+          <td>Tabla unica, 5 roles. v2 agrega password_hash, intentos_fallidos, bloqueado_hasta.</td>
+        </tr>
+        <tr>
+          <td><code>refresh_tokens</code> <span class="badge badge-new">v2</span></td>
+          <td><span class="badge badge-morado">Usuarios</span></td>
+          <td>usuario_id</td>
+          <td>Control de sesiones. token_hash es el hash del token, nunca texto plano. revocado_at NULL = activa.</td>
+        </tr>
+        <tr>
+          <td><code>grupos</code></td>
+          <td><span class="badge badge-teal">Academico</span></td>
+          <td>plantel_id, periodo_id, carrera_id</td>
+          <td>UQ(nombre, periodo_id) permite reutilizar nombres en distintos periodos.</td>
+        </tr>
+        <tr>
+          <td><code>alumnos</code></td>
+          <td><span class="badge badge-teal">Academico</span></td>
+          <td>usuario_id, grupo_id</td>
+          <td>nivel_semaforo = columna calculada PERSISTED. v2: trigger actualiza puntos_totales. Columnas cifradas AES-256.</td>
+        </tr>
+        <tr>
+          <td><code>materias</code></td>
+          <td><span class="badge badge-teal">Academico</span></td>
+          <td>grupo_id, docente_id</td>
+          <td>Multiples materias por grupo. Indices en FK en v2.</td>
+        </tr>
+        <tr>
+          <td><code>contactos_emergencia</code></td>
+          <td><span class="badge badge-teal">Academico</span></td>
+          <td>alumno_id</td>
+          <td>Multiples contactos por alumno. es_primario distingue el principal.</td>
+        </tr>
+        <tr>
+          <td><code>padres_alumnos</code></td>
+          <td><span class="badge badge-teal">Academico</span></td>
+          <td>padre_id, alumno_id</td>
+          <td>PK compuesta M:N. notificaciones_activas controla si el padre recibe alertas.</td>
+        </tr>
+        <tr>
+          <td><code>categorias_incidencia</code></td>
+          <td><span class="badge badge-naranja">Conductual</span></td>
+          <td>plantel_id</td>
+          <td>Configurable por plantel. impacto_base puede ser positivo o negativo.</td>
+        </tr>
+        <tr>
+          <td><code>reglas_semaforo</code></td>
+          <td><span class="badge badge-naranja">Conductual</span></td>
+          <td>plantel_id</td>
+          <td>Umbrales configurables: verde >=80, naranja >=40, rojo <40.</td>
+        </tr>
+        <tr>
+          <td><code>incidencias</code></td>
+          <td><span class="badge badge-naranja">Conductual</span></td>
+          <td>alumno_id, registrado_por, periodo_id, categoria_id, materia_id</td>
+          <td>v2: CHK real via fn_es_registrador_valido. materia_id nullable. Trigger de auditoria.</td>
+        </tr>
+        <tr>
+          <td><code>asistencias</code></td>
+          <td><span class="badge badge-naranja">Conductual</span></td>
+          <td>alumno_id, materia_id</td>
+          <td>Una fila por alumno+materia+fecha. Indice en (alumno_id, fecha DESC).</td>
+        </tr>
+        <tr>
+          <td><code>historial_semaforo</code></td>
+          <td><span class="badge badge-naranja">Conductual</span></td>
+          <td>alumno_id, periodo_id, grupo_id</td>
+          <td>Desnormalizacion intencional para queries O(1). v2: trigger automatico + columna causado_por.</td>
+        </tr>
+        <tr>
+          <td><code>notificaciones</code></td>
+          <td><span class="badge badge-verde">Comunicacion</span></td>
+          <td>incidencia_id, destinatario_id</td>
+          <td>Siempre derivadas de una incidencia. Indice en (destinatario_id, leida).</td>
+        </tr>
+        <tr>
+          <td><code>avisos</code></td>
+          <td><span class="badge badge-verde">Comunicacion</span></td>
+          <td>plantel_id, creado_por</td>
+          <td>dirigido_a segmenta por semaforo. v2: indice INCLUDE(titulo, fecha_evento, descripcion).</td>
+        </tr>
+        <tr>
+          <td><code>seguimientos</code></td>
+          <td><span class="badge badge-verde">Comunicacion</span></td>
+          <td>alumno_id, orientador_id</td>
+          <td>Tipos: cita, llamada, nota. Indices en FK en v2.</td>
+        </tr>
+        <tr>
+          <td><code>insignias</code></td>
+          <td><span class="badge badge-gris">Gamificacion</span></td>
+          <td>plantel_id</td>
+          <td>Configurable por plantel con puntos_requeridos como umbral.</td>
+        </tr>
+        <tr>
+          <td><code>alumno_insignias</code></td>
+          <td><span class="badge badge-gris">Gamificacion</span></td>
+          <td>alumno_id, insignia_id</td>
+          <td>PK compuesta. La app decide el momento de otorgamiento.</td>
+        </tr>
+        <tr>
+          <td><code>audit_log</code> <span class="badge badge-new">v2</span></td>
+          <td><span class="badge badge-rojo">Auditoria</span></td>
+          <td>usuario_id</td>
+          <td>INSERT/UPDATE/DELETE en tablas criticas. valor_anterior/nuevo en JSON. Acceso solo directivo.</td>
+        </tr>
+        <tr>
+          <td><code>sai_sync_log</code> <span class="badge badge-new">v2</span></td>
+          <td><span class="badge badge-rojo">Auditoria</span></td>
+          <td>alumno_id</td>
+          <td>Trazabilidad SAI. Estado: iniciada / completada / fallida / parcial.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+
+<!-- ============================================================
+     SECCION 3: LOGICA SEMAFORO
+     ============================================================ -->
+<main id="semaforo" class="section">
+  <h1>Logica del semaforo conductual</h1>
+  <p class="page-subtitle">Flujo completo desde el registro de una incidencia hasta la notificacion al padre de familia.</p>
+
+  <div class="semaforo-grid">
+    <div class="semaforo-card semaforo-verde">
+      <div class="semaforo-indicator ind-verde"></div>
+      <div class="semaforo-pts">&ge; 80 pts</div>
+      <div class="semaforo-label">VERDE</div>
+      <div class="semaforo-desc">Sin intervencion requerida</div>
+    </div>
+    <div class="semaforo-card semaforo-naranja">
+      <div class="semaforo-indicator ind-naranja"></div>
+      <div class="semaforo-pts">40 &ndash; 79 pts</div>
+      <div class="semaforo-label">NARANJA</div>
+      <div class="semaforo-desc">Seguimiento preventivo</div>
+    </div>
+    <div class="semaforo-card semaforo-rojo">
+      <div class="semaforo-indicator ind-rojo"></div>
+      <div class="semaforo-pts">&lt; 40 pts</div>
+      <div class="semaforo-label">ROJO</div>
+      <div class="semaforo-desc">Intervencion urgente</div>
+    </div>
+  </div>
+
+  <h2>Flujo de eventos en la base de datos</h2>
+
+  <div class="flow-steps">
+
+    <div class="flow-step step-azul">
+      <div class="flow-step-left">
+        <div class="flow-step-num">1</div>
+        <div class="flow-step-line"></div>
+      </div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">Docente / orientador / directivo registra una incidencia</div>
+        <p>
+          <code>INSERT INTO incidencias (alumno_id, registrado_por, categoria_id, impacto_puntos&hellip;)</code><br>
+          El constraint <code>CHK_incidencia_registrador</code> (v2, OWASP A01) verifica en BD &mdash; no en la app &mdash; que el <code>registrado_por</code> tenga un rol autorizado. Un padre o alumno no puede insertar aunque evada la capa de aplicacion.
+        </p>
+      </div>
+    </div>
+
+    <div class="flow-step step-amarillo">
+      <div class="flow-step-left">
+        <div class="flow-step-num">2</div>
+        <div class="flow-step-line"></div>
+      </div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">Trigger TR_incidencias_actualiza_puntos (automatico)</div>
+        <p>
+          Recalcula <code>alumnos.puntos_totales</code> haciendo <code>SUM(impacto_puntos)</code> de todas las incidencias del alumno. Recalculo completo, no suma/resta incremental, para evitar deriva acumulada ante futuros UPDATE o DELETE de incidencias anteriores.
+        </p>
+      </div>
+    </div>
+
+    <div class="flow-step step-verde">
+      <div class="flow-step-left">
+        <div class="flow-step-num">3</div>
+        <div class="flow-step-line"></div>
+      </div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">nivel_semaforo se recalcula como columna PERSISTED</div>
+        <p>
+          SQL Server recalcula automaticamente la columna calculada al cambiar <code>puntos_totales</code>:<br>
+          <code>CASE WHEN puntos_totales &ge; 80 THEN 'verde' WHEN puntos_totales &ge; 40 THEN 'naranja' ELSE 'rojo' END</code>
+        </p>
+      </div>
+    </div>
+
+    <div class="flow-step step-naranja">
+      <div class="flow-step-left">
+        <div class="flow-step-num">4</div>
+        <div class="flow-step-line"></div>
+      </div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">Trigger TR_historial_semaforo_auto (solo si el color cambio)</div>
+        <p>
+          Compara <code>nivel_semaforo</code> de <code>inserted</code> vs <code>deleted</code>. Si difieren, inserta en <code>historial_semaforo</code> con el color anterior, el nuevo y <code>causado_por = NULL</code> (indicando origen automatico). Sin ruido para cambios de puntos que no cruzaron umbral.
+        </p>
+      </div>
+    </div>
+
+    <div class="flow-step step-morado">
+      <div class="flow-step-left">
+        <div class="flow-step-num">5</div>
+        <div class="flow-step-line"></div>
+      </div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">El backend genera notificaciones a padres y orientadores</div>
+        <p>
+          La API consulta <code>padres_alumnos WHERE notificaciones_activas = 1</code> e inserta en <code>notificaciones</code> con el canal correspondiente. El envio push/email ocurre fuera de la BD &mdash; la base solo persiste el registro.
+        </p>
+      </div>
+    </div>
+
+    <div class="flow-step step-gris">
+      <div class="flow-step-left">
+        <div class="flow-step-num">6</div>
+        <div class="flow-step-line"></div>
+      </div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">Trigger TR_audit_incidencias registra la operacion en audit_log</div>
+        <p>
+          Corre en el mismo batch que el paso 1 (AFTER INSERT). Serializa la fila en JSON y la persiste en <code>audit_log</code> con <code>sistema_origen = 'TRIGGER'</code>. El <code>usuario_id</code> lo puede inyectar la API en la sesion de conexion si se implementa <code>SET CONTEXT_INFO</code>.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+
+<!-- ============================================================
+     SECCION 4: ROLES
+     ============================================================ -->
+<main id="roles" class="section">
+  <h1>Roles y permisos</h1>
+  <p class="page-subtitle">Matriz de acceso a operaciones criticas. El enforcement primario es la API; las correcciones v2 agregan enforcement secundario en la BD para las operaciones mas sensibles.</p>
+
+  <div class="alert alert-naranja">
+    OWASP A01:2025 (Broken Access Control): los controles solo en la capa de aplicacion son insuficientes. Un bug, una migracion manual o acceso directo a la BD evadiran el control. La v2 implementa <code>CHK_incidencia_registrador</code> como primera linea de defensa en BD. Se recomienda extender el mismo patron a <code>seguimientos</code> (solo orientadores y directivos).
+  </div>
+
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Operacion</th>
+          <th>docente</th>
+          <th>orientador</th>
+          <th>directivo</th>
+          <th>padre</th>
+          <th>alumno</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Ver perfil de alumno</td>
+          <td class="check-cond">Propio grupo</td>
+          <td class="check-yes">Todos</td>
+          <td class="check-yes">Todos</td>
+          <td class="check-cond">Solo hijo</td>
+          <td class="check-cond">Solo propio</td>
+        </tr>
+        <tr>
+          <td>Registrar incidencia <span class="owasp-tag">A01</span></td>
+          <td class="check-yes">BD enforce v2</td>
+          <td class="check-yes">BD enforce v2</td>
+          <td class="check-yes">BD enforce v2</td>
+          <td class="check-no">Bloqueado en BD</td>
+          <td class="check-no">Bloqueado en BD</td>
+        </tr>
+        <tr>
+          <td>Ver historial semaforo</td>
+          <td class="check-cond">Propio grupo</td>
+          <td class="check-yes">Todos</td>
+          <td class="check-yes">Todos</td>
+          <td class="check-cond">Solo hijo</td>
+          <td class="check-cond">Solo propio</td>
+        </tr>
+        <tr>
+          <td>Crear avisos</td>
+          <td class="check-no">No aplica</td>
+          <td class="check-yes">Si</td>
+          <td class="check-yes">Si</td>
+          <td class="check-no">No</td>
+          <td class="check-no">No</td>
+        </tr>
+        <tr>
+          <td>Registrar seguimiento</td>
+          <td class="check-no">No aplica</td>
+          <td class="check-yes">Si</td>
+          <td class="check-yes">Si</td>
+          <td class="check-no">No</td>
+          <td class="check-no">No</td>
+        </tr>
+        <tr>
+          <td>Ver notificaciones</td>
+          <td class="check-dash">&mdash;</td>
+          <td class="check-cond">Propias</td>
+          <td class="check-yes">Todas</td>
+          <td class="check-cond">Propias</td>
+          <td class="check-dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td>Ver audit_log <span class="owasp-tag">A09</span></td>
+          <td class="check-no">No</td>
+          <td class="check-no">No</td>
+          <td class="check-cond">Solo lectura</td>
+          <td class="check-no">No</td>
+          <td class="check-no">No</td>
+        </tr>
+        <tr>
+          <td>Gestionar usuarios</td>
+          <td class="check-no">No</td>
+          <td class="check-no">No</td>
+          <td class="check-cond">Plantel propio</td>
+          <td class="check-no">No</td>
+          <td class="check-no">No</td>
+        </tr>
+        <tr>
+          <td>Revocar sesiones <span class="owasp-tag">A07</span></td>
+          <td class="check-cond">Propias</td>
+          <td class="check-cond">Propias</td>
+          <td class="check-cond">Todas del plantel</td>
+          <td class="check-cond">Propias</td>
+          <td class="check-cond">Propias</td>
+        </tr>
+        <tr>
+          <td>Leer datos cifrados <span class="owasp-tag">LFPDPPP</span></td>
+          <td class="check-no">No</td>
+          <td class="check-cond">Via API</td>
+          <td class="check-cond">Via API</td>
+          <td class="check-no">No</td>
+          <td class="check-no">No</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+
+<!-- ============================================================
+     SECCION 5: CORRECCIONES V2
+     ============================================================ -->
+<main id="fixes" class="section">
+  <h1>Correcciones aplicadas en v2</h1>
+  <p class="page-subtitle">11 cambios organizados por categoria: seguridad (OWASP / LFPDPPP) y eficiencia.</p>
+
+  <h2>Seguridad</h2>
+
+  <div class="fix-list">
+    <div class="fix-item">
+      <div class="fix-icon fix-icon-rojo">SEC-1</div>
+      <div class="fix-content">
+        <h3>Esquema de contrasenas seguras <span class="owasp-tag">OWASP A04</span> <span class="owasp-tag">A07</span></h3>
+        <p>
+          La tabla <code>usuarios</code> no tenia columna de credenciales. Se agrega <code>password_hash NVARCHAR(255) NOT NULL DEFAULT ''</code>. El DEFAULT vacio fuerza un reset en el primer login. El backend debe usar Argon2id (preferido) o bcrypt con work factor &ge; 12, generando un Salt aleatorio de 16 bytes por usuario. Nunca almacenar texto plano. Se agregan tambien <code>intentos_fallidos</code>, <code>bloqueado_hasta</code> y <code>ultimo_login</code>.
+        </p>
+      </div>
+    </div>
+
+    <div class="fix-item">
+      <div class="fix-icon fix-icon-rojo">SEC-2</div>
+      <div class="fix-content">
+        <h3>Tabla audit_log y triggers de trazabilidad <span class="owasp-tag">A09</span></h3>
+        <p>
+          Sin auditoria no hay trazabilidad institucional. Se crea <code>audit_log</code> con <code>valor_anterior</code> y <code>valor_nuevo</code> serializados como JSON. Tres triggers (uno por tabla critica: <code>incidencias</code>, <code>alumnos</code>, <code>historial_semaforo</code>) la alimentan automaticamente ante INSERT/UPDATE/DELETE. Cumple requerimientos de compliance de organismos educativos bajo supervision de la SEP y la LFPDPPP.
+        </p>
+      </div>
+    </div>
+
+    <div class="fix-item">
+      <div class="fix-icon fix-icon-rojo">SEC-3</div>
+      <div class="fix-content">
+        <h3>Constraint de control de acceso en incidencias <span class="owasp-tag">OWASP A01</span></h3>
+        <p>
+          El DDL v1 indicaba en un comentario que la validacion del rol se haria en backend o RLS, pero no habia ninguna salvaguarda en la BD. Se crea la funcion escalar determinista <code>fn_es_registrador_valido</code> con <code>WITH SCHEMABINDING</code> y el constraint <code>CHK_incidencia_registrador</code>. Bloquea inserciones de roles <code>padre</code> y <code>alumno</code> incluso si la API es eludida.
+        </p>
+      </div>
+    </div>
+
+    <div class="fix-item">
+      <div class="fix-icon fix-icon-naranja">SEC-4</div>
+      <div class="fix-content">
+        <h3>Cifrado de datos personales (LFPDPPP Arts. 3, 9, 19 y 48)</h3>
+        <p>
+          <code>correo_personal</code> y <code>telefono</code> en <code>alumnos</code> son datos personales bajo la LFPDPPP. Su exposicion puede generar sanciones del INAI (Art. 64). Se implementa cifrado simetrico nativo: Database Master Key + certificado autofirmado + Symmetric Key AES-256. Se agregan columnas <code>correo_personal_enc</code> y <code>telefono_enc</code> de tipo <code>VARBINARY(500)</code>. Los datos existentes se migran con <code>ENCRYPTBYKEY</code>. Las columnas de texto plano se eliminan tras validar en entorno de pruebas.
+        </p>
+      </div>
+    </div>
+
+    <div class="fix-item">
+      <div class="fix-icon fix-icon-naranja">SEC-5</div>
+      <div class="fix-content">
+        <h3>Tabla sai_sync_log para trazabilidad de sincronizaciones <span class="owasp-tag">Integridad</span></h3>
+        <p>
+          El campo <code>alumnos.sai_sync_at</code> solo guardaba el ultimo timestamp. Una sincronizacion parcial era indistinguible de una exitosa. La nueva tabla registra cada sincronizacion con estado (<code>iniciada</code> / <code>completada</code> / <code>fallida</code> / <code>parcial</code>) y conteo de registros procesados correctamente vs con error.
+        </p>
+      </div>
+    </div>
+
+    <div class="fix-item">
+      <div class="fix-icon fix-icon-naranja">SEC-6</div>
+      <div class="fix-content">
+        <h3>Tabla refresh_tokens para control de sesiones <span class="owasp-tag">OWASP A07</span></h3>
+        <p>
+          Sin tabla de sesiones no es posible invalidar un token robado, forzar logout global ni detectar dispositivos sospechosos. La tabla <code>refresh_tokens</code> almacena el hash del token (nunca el token en texto plano), la informacion del dispositivo, la IP, la fecha de expiracion y el flag <code>revocado</code>. Al revocar, marcar <code>revocado = 1</code> en la misma transaccion que emite el nuevo token para prevenir replay attacks.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="mt-4">Eficiencia y rendimiento</h2>
+
+  <div class="fix-list">
+    <div class="fix-item">
+      <div class="fix-icon fix-icon-amarillo">EFF-1</div>
+      <div class="fix-content">
+        <h3>Trigger TR_incidencias_actualiza_puntos</h3>
+        <p>
+          <code>puntos_totales</code> era un campo normal que la API debia actualizar manualmente. Cualquier ruta que omitiera ese paso dejaba <code>nivel_semaforo</code> desincronizado sin advertencia. El trigger recalcula con <code>SUM</code> completo (no incremento) para evitar deriva acumulada ante UPDATE o DELETE de incidencias previas.
+        </p>
+      </div>
+    </div>
+
+    <div class="fix-item">
+      <div class="fix-icon fix-icon-amarillo">EFF-2</div>
+      <div class="fix-content">
+        <h3>Indices NONCLUSTERED en FK sin indice</h3>
+        <p>
+          SQL Server no crea indices automaticamente en columnas FK. Las siguientes FK carecian de indice en la v1: <code>carreras(plantel_id)</code>, <code>grupos(plantel_id)</code>, <code>grupos(periodo_id)</code>, <code>materias(grupo_id)</code>, <code>materias(docente_id)</code>, <code>incidencias(registrado_por)</code>, <code>seguimientos(alumno_id)</code>, <code>seguimientos(orientador_id)</code>, <code>padres_alumnos(alumno_id)</code>. Cada una generaba full scans en sus respectivos JOINs.
+        </p>
+      </div>
+    </div>
+
+    <div class="fix-item">
+      <div class="fix-icon fix-icon-amarillo">EFF-3</div>
+      <div class="fix-content">
+        <h3>Correccion NEWID() vs NEWSEQUENTIALID() en el seed</h3>
+        <p>
+          La tabla define <code>DEFAULT NEWSEQUENTIALID()</code> para que el B-Tree inserte hojas siempre al final, evitando page splits. El seed v1 usaba <code>NEWID()</code> (UUID aleatorio) al declarar las variables, fragmentando el indice clustered desde la primera ejecucion. La solucion es omitir el <code>id</code> en el <code>INSERT</code> y capturar el valor generado con <code>OUTPUT INSERTED.id</code> si se necesita referenciar en el mismo script.
+        </p>
+      </div>
+    </div>
+
+    <div class="fix-item">
+      <div class="fix-icon fix-icon-amarillo">EFF-4</div>
+      <div class="fix-content">
+        <h3>Trigger TR_historial_semaforo_auto</h3>
+        <p>
+          El historial solo se registraba cuando la API lo recordaba. Rutas de actualizacion directa de puntos omitian el paso, dejando brechas en la bitacora conductual. El trigger garantiza el registro automatico y solo cuando el color efectivamente cambia, evitando ruido en la tabla.
+        </p>
+      </div>
+    </div>
+
+    <div class="fix-item">
+      <div class="fix-icon fix-icon-amarillo">EFF-5</div>
+      <div class="fix-content">
+        <h3>Indice IX_avisos_dirigido_activo con INCLUDE</h3>
+        <p>
+          La pantalla principal del alumno ejecuta en cada carga la query <code>WHERE plantel_id = X AND activo = 1 AND dirigido_a IN ('todos', 'semaforo_naranja')</code>. Sin indice era un full scan. El nuevo indice sobre <code>(plantel_id, dirigido_a, activo)</code> con <code>INCLUDE(titulo, fecha_evento, descripcion)</code> convierte la consulta en una index-only scan al no necesitar acceder a la tabla base.
+        </p>
+      </div>
+    </div>
+  </div>
+</main>
+
+
+<!-- ============================================================
+     SECCION 6: CONSULTAS CLAVE
+     ============================================================ -->
+<main id="queries" class="section">
+  <h1>Consultas clave del sistema</h1>
+  <p class="page-subtitle">Las queries mas frecuentes segun los prototipos de pantalla, con los indices que las resuelven en la v2.</p>
+
+  <h2>Dashboard del alumno</h2>
+
+  <div class="query-card">
+    <div class="query-header">
+      <h3>Estado conductual actual</h3>
+      <p>Cubre el bloque "Estado Conductual" del prototipo. Indice clustered por PK en alumnos.</p>
+    </div>
+    <div class="query-body">
+<pre>SELECT a.puntos_totales, a.nivel_semaforo, a.matricula,
+       u.nombre, u.apellido, g.nombre AS grupo,
+       c.nombre AS carrera
+FROM   alumnos a
+INNER JOIN usuarios u ON a.usuario_id = u.id
+INNER JOIN grupos   g ON a.grupo_id   = g.id
+INNER JOIN carreras c ON g.carrera_id = c.id
+WHERE  a.usuario_id = @usuario_id;</pre>
+    </div>
+  </div>
+
+  <div class="query-card">
+    <div class="query-header">
+      <h3>Actividad reciente (ultimas 10 incidencias)</h3>
+      <p>Usa IX_incidencias_alumno (alumno_id, created_at DESC). Sin este indice era un full scan con ORDER BY.</p>
+    </div>
+    <div class="query-body">
+<pre>SELECT TOP 10
+    i.created_at,
+    ci.nombre        AS categoria,
+    ci.color_semaforo,
+    i.descripcion,
+    i.impacto_puntos
+FROM   incidencias i
+INNER JOIN categorias_incidencia ci ON i.categoria_id = ci.id
+WHERE  i.alumno_id = @alumno_id
+ORDER BY i.created_at DESC;</pre>
+    </div>
+  </div>
+
+  <div class="query-card">
+    <div class="query-header">
+      <h3>Aviso proximo segmentado por semaforo</h3>
+      <p>Cubre el bloque "Aviso Proximo". Usa IX_avisos_dirigido_activo (index-only scan en v2).</p>
+    </div>
+    <div class="query-body">
+<pre>-- @color_alumno = nivel_semaforo del alumno autenticado
+SELECT TOP 1 titulo, descripcion, fecha_evento
+FROM   avisos
+WHERE  plantel_id = @plantel_id
+  AND  activo     = 1
+  AND  dirigido_a IN ('todos', 'semaforo_' + @color_alumno)
+ORDER BY fecha_evento ASC;</pre>
+    </div>
+  </div>
+
+  <h2>Dashboard de orientacion</h2>
+
+  <div class="query-card">
+    <div class="query-header">
+      <h3>Alumnos en semaforo rojo del periodo activo</h3>
+      <p>nivel_semaforo es columna PERSISTED; SQL Server la puede filtrar directamente sin recalcular.</p>
+    </div>
+    <div class="query-body">
+<pre>SELECT a.id, u.nombre, u.apellido, a.matricula,
+       a.puntos_totales, a.nivel_semaforo,
+       g.nombre AS grupo
+FROM   alumnos a
+INNER JOIN usuarios u ON a.usuario_id = u.id
+INNER JOIN grupos   g ON a.grupo_id   = g.id
+WHERE  g.periodo_id  = @periodo_activo_id
+  AND  a.nivel_semaforo = 'rojo'
+ORDER BY a.puntos_totales ASC;</pre>
+    </div>
+  </div>
+
+  <div class="query-card">
+    <div class="query-header">
+      <h3>Historial de semaforo de un alumno en el periodo</h3>
+      <p>Usa IX_historial_alumno. La desnormalizacion de periodo_id evita JOINs adicionales en una tabla que puede tener cientos de miles de filas.</p>
+    </div>
+    <div class="query-body">
+<pre>SELECT color_anterior, color_nuevo,
+       motivo, causado_por, created_at
+FROM   historial_semaforo
+WHERE  alumno_id  = @alumno_id
+  AND  periodo_id = @periodo_id
+ORDER BY created_at DESC;</pre>
+    </div>
+  </div>
+
+  <h2>Reportes para directivos</h2>
+
+  <div class="query-card">
+    <div class="query-header">
+      <h3>Distribucion de semaforo por grupo</h3>
+      <p>Agregacion sobre nivel_semaforo (columna PERSISTED). No requiere subconsultas ni recalculos.</p>
+    </div>
+    <div class="query-body">
+<pre>SELECT
+    g.nombre AS grupo,
+    COUNT(CASE WHEN a.nivel_semaforo = 'verde'   THEN 1 END) AS verde,
+    COUNT(CASE WHEN a.nivel_semaforo = 'naranja' THEN 1 END) AS naranja,
+    COUNT(CASE WHEN a.nivel_semaforo = 'rojo'    THEN 1 END) AS rojo,
+    COUNT(*)                                                  AS total
+FROM   grupos g
+INNER JOIN alumnos a ON a.grupo_id = g.id
+WHERE  g.periodo_id = @periodo_activo_id
+  AND  g.plantel_id = @plantel_id
+GROUP BY g.id, g.nombre
+ORDER BY g.nombre;</pre>
+    </div>
+  </div>
+
+  <div class="query-card">
+    <div class="query-header">
+      <h3>Leer dato personal cifrado (correo o telefono)</h3>
+      <p>Requiere abrir la Symmetric Key en la sesion. El backend debe cerrarla inmediatamente despues de leer.</p>
+    </div>
+    <div class="query-body">
+<pre>OPEN SYMMETRIC KEY SYMKEY_EduTrack_DatosPers
+    DECRYPTION BY CERTIFICATE CERT_EduTrack_DatosPers;
+
+SELECT
+    a.id,
+    CAST(DECRYPTBYKEY(a.correo_personal_enc) AS NVARCHAR(200)) AS correo_personal,
+    CAST(DECRYPTBYKEY(a.telefono_enc)        AS NVARCHAR(20))  AS telefono
+FROM   alumnos a
+WHERE  a.id = @alumno_id;
+
+CLOSE SYMMETRIC KEY SYMKEY_EduTrack_DatosPers;</pre>
+    </div>
+  </div>
+
+  <div class="alert alert-verde mt-3">
+    Todas las queries anteriores estan cubiertas por al menos un indice definido en el DDL v2. No hay full scans en las rutas criticas del prototipo.
+  </div>
+</main>
+
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+  function show(id, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('visible');
+    btn.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function detail(node, title, desc, tables, color) {
+    document.querySelectorAll('.arch-node').forEach(n => n.classList.remove('active'));
+    node.classList.add('active');
+
+    const panel = document.getElementById('detail-panel');
+
+    const chips = tables.map(t =>
+      `<span class="chip">${t}</span>`
+    ).join('');
+
+    panel.innerHTML = `
+      <div class="detail-header">
+        <span class="detail-dot" style="background:${color};"></span>
+        <h3 style="margin:0;">${title}</h3>
+      </div>
+      <p class="detail-desc">${desc}</p>
+      <div class="chip-list">${chips}</div>
+    `;
+  }
+</script>
+</body>
+</html>
